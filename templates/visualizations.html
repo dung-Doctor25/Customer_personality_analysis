@@ -1,0 +1,227 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biểu đồ Tuổi & Thu nhập theo Cluster</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      margin-top: 40px;
+      color: #333;
+    }
+    .tooltip {
+      position: absolute;
+      padding: 6px 10px;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    svg {
+      background: white;
+      margin-bottom: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .cluster-name-form {
+      margin: 20px auto;
+      max-width: 600px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .cluster-name-form h3 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .cluster-name-form label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .cluster-name-form input[type="text"] {
+      width: calc(100% - 20px);
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .cluster-name-form button {
+      padding: 10px 20px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .cluster-name-form button:hover {
+      background: #555;
+    }
+    .success-message {
+      color: green;
+      margin-top: 10px;
+      display: none;
+    }
+    .error-message {
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
+    .silhouette-score {
+      text-align: center;
+      margin: 20px 0;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="silhouette-score">
+    {% if silhouette_score %}
+      Chỉ số Silhouette: <strong>{{ silhouette_score|floatformat:3 }}</strong>
+    {% else %}
+      Không có chỉ số Silhouette khả dụng
+    {% endif %}
+  </div>
+<h2 style="text-align: center;">Đặt tên cho các cụm</h2>
+<div class="cluster-name-form">
+  <h3>Nhập tên cho từng cụm</h3>
+  <div id="cluster-name-inputs"></div>
+  <div id="success-message" class="success-message"></div>
+  <div id="error-message" class="error-message"></div>
+</div>
+
+<h2 style="text-align: center;">RFM trung bình của mỗi cụm</h2>
+<div style="display: flex; justify-content: center;">
+  <svg id="q1" width="800" height="500"></svg>
+</div>  
+
+<h2 style="text-align: center;">Học vấn/Tình trạng hôn nhân của mỗi cụm</h2>
+<div style="text-align: center;">
+  <svg id="q4" width="800" height="350"></svg>
+</div>
+
+<h2 style="text-align: center;">Tuổi trung bình & Thu nhập trung bình theo cụm</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="ageChart" width="400" height="300"></svg>
+  <svg id="incomeChart" width="400" height="300"></svg>
+</div>
+
+<h2 style="text-align: center;">Phân khúc khách hàng theo RFM & theo cụm</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="segmentChart" width="400" height="300"></svg>
+  <svg id="q8" width="400" height="300"></svg>
+</div>
+
+<h2 style="text-align: center;">Kidhome theo cụm</h2>
+<div id="kidPieContainer" style="display: flex; justify-content: center;"></div>
+
+<h2 style="text-align: center;">Teenhome theo cụm</h2>
+<div id="teenPieContainer" style="display: flex; justify-content: center;"></div>
+
+<h2 style="text-align: center;">Hành vi Mua Sắm & Chi tiêu theo cụm</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="stackedBar" style="width: 450px; height: 300px;"></svg>
+  <svg id="chitieuChart" width="400" height="300"></svg>
+</div>
+
+<!-- Liên kết các tệp JavaScript cho các biểu đồ -->
+<script src="{% static 'q1.js' %}"></script>
+<script src="{% static 'q2.js' %}"></script>
+<script src="{% static 'q3.js' %}"></script>
+<script src="{% static 'q4.js' %}"></script>
+<script src="{% static 'q5.js' %}"></script>
+<script src="{% static 'q6.js' %}"></script>
+<script src="{% static 'q7.js' %}"></script>
+<script src="{% static 'q8.js' %}"></script>
+<script src="{% static 'q21.js' %}"></script>
+<script src="{% static 'q22.js' %}"></script>
+<script>
+  // Lấy danh sách cụm từ /customer-data/ và tạo form
+  d3.json("/customer-data/").then(data => {
+    const clusters = Array.from(new Set(data.map(d => d.cluster || ''))).filter(c => c !== '').sort();
+    const container = d3.select("#cluster-name-inputs");
+
+    if (clusters.length === 0) {
+      container.append("p").text("Không có cụm để đặt tên");
+      return;
+    }
+
+    clusters.forEach(cluster => {
+      const div = container.append("div");
+      div.append("label")
+        .attr("for", `cluster-${cluster}`)
+        .text(`Cụm ${cluster}:`);
+      div.append("input")
+        .attr("type", "text")
+        .attr("id", `cluster-${cluster}`)
+        .attr("placeholder", `Nhập tên mới cho cụm ${cluster}`)
+        .attr("data-cluster", cluster);
+      div.append("button")
+        .text("Lưu")
+        .on("click", function() {
+          const input = d3.select(this.previousElementSibling);
+          const old_cluster = input.attr("data-cluster");
+          const cluster_name = input.property("value").trim();
+
+          if (!cluster_name) {
+            d3.select("#error-message")
+              .text("Vui lòng nhập tên cụm")
+              .style("display", "block");
+            return;
+          }
+
+          d3.json("{% url 'save_cluster_name' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: `cluster=${encodeURIComponent(old_cluster)}&cluster_name=${encodeURIComponent(cluster_name)}`
+          })
+          .then(response => {
+            if (response.status === "success") {
+              d3.select("#success-message")
+                .text(response.message)
+                .style("display", "block");
+              d3.select("#error-message").style("display", "none");
+              setTimeout(() => d3.select("#success-message").style("display", "none"), 3000);
+              location.reload(); // Làm mới trang để cập nhật biểu đồ
+            } else {
+              d3.select("#error-message")
+                .text(response.message)
+                .style("display", "block");
+              d3.select("#success-message").style("display", "none");
+            }
+          })
+          .catch(error => {
+            d3.select("#error-message")
+              .text("Lỗi khi lưu tên cụm")
+              .style("display", "block");
+            d3.select("#success-message").style("display", "none");
+          });
+        });
+    });
+  });
+</script>
+
+</body>
+</html>
+{% endblock content %}

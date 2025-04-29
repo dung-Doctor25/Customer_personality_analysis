@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biểu đồ Tuổi & Thu nhập theo Cluster</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      margin-top: 40px;
+      color: #333;
+    }
+    .tooltip {
+      position: absolute;
+      padding: 6px 10px;
+      background: #333;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    svg {
+      background: white;
+      margin-bottom: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<h2 style="text-align: center;">RFM trung bình của mỗi Cluster</h2>
+<div style="display: flex; justify-content: center;">
+  <svg id="q1" width="600" height="200"></svg>
+</div>  
+
+<h2 style="text-align: center;">Học vấn/Tình trạng hôn nhân của mỗi Cluster</h2>
+<div style="text-align: center;">
+  <svg id="q4" width="800" height="300"></svg>
+</div>
+
+<h2 style="text-align: center;">Tuổi trung bình & Thu nhập trung bình theo Cluster</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="ageChart" width="400" height="300"></svg>
+  <svg id="incomeChart" width="400" height="300"></svg>
+</div>
+
+<h2 style="text-align: center;">Phân khúc khách hàng theo RFM & theo Cluster</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="segmentChart" width="400" height="300"></svg>
+  <svg id="q8" width="400" height="300"></svg>
+</div>
+
+
+<h2 style="text-align: center;">Kidhome theo Cluster</h2>
+<div id="kidPieContainer" style="display: flex; justify-content: center;"></div>
+
+<h2 style="text-align: center;">Teenhome theo Cluster</h2>
+<div id="teenPieContainer" style="display: flex; justify-content: center;"></div>
+
+
+<h2 style="text-align: center;">Hành vi Mua Sắm & Chi tiêu theo Cluster</h2>
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <svg id="stackedBar" style="width: 450px; height: 300px;"></svg>
+  <svg id="chitieuChart" width="400" height="300"></svg>
+</div>
+
+
+
+
+<!-- Liên kết các tệp JavaScript cho các biểu đồ -->
+<script src="main/q1.js"></script>
+<script src="main/q21.js"></script>
+<script src="main/q22.js"></script>
+<script src="main/q3.js"></script>
+<script src="main/q4.js"></script>
+<script src="main/q5.js"></script>
+<script src="main/q6.js"></script>
+<script src="main/q7.js"></script>
+<script src="main/q8.js"></script>
+
+</body>
+</html>
